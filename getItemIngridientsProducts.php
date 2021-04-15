@@ -27,12 +27,35 @@ function getItemIngridientsProducts($href)
     $document = phpQuery::newDocument($hbr);
     $entry = $document->find('table.ingr tr');
     foreach ($entry as $item)
-               $repository[]=$item;
+               $repository[]=trim($item->textContent);
     return $repository;
 }
 
+
+function getItemDescriptionProducts($href)
+{
+    $repository = [];
+    $hbr = file_get_contents($href);
+    $document = phpQuery::newDocument($hbr);
+    $entry = $document->find('div.step_images_n .step_n');
+    foreach ($entry as $item){
+        $img= pq($item)->find('.img_c a')->attr('href')  ;
+        $text= pq($item)->find('p')->text();
+        $repository[]= ['img'=>$img,'text'=>$text];
+    }
+
+    return $repository;
+}
+
+
+
+
 $href="./test.html";
- $res=getItemProducts($href);
+echo "<pre>";
+//$res=getItemIngridientsProducts($href);
+$res=getItemDescriptionProducts($href);
+
+
 print_r($res);
 
 ?>

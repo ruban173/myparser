@@ -1,0 +1,191 @@
+var informb_stat_url='stat.russianfood.com';
+if(informb_stat_is_local){
+	informb_stat_url='stat.here';
+}
+var informb_stat_user_id="";
+//var informb_stat_session_id="";
+var informb_stat_experiment_id=0;
+var informb_stat_view_page_id="";
+var informb_stat_safari_submited= 0;
+var informb_stat_started= false;
+var informb_stat_scroll_pre = true;
+var informb_stat_user_scrolled_on_time = false;
+var informb_stat_user_scrolled_once = false;
+var informb_stat_user_mouse_moved_on_time = false;
+var informb_stat_user_mouse_moved_once = false;
+var informb_stat_scroll_el = [];
+var informb_stat_el_list = "";
+var informb_stat_timer_cur = 0;
+var informb_stat_timer_go = 0;
+var informb_stat_is_touch_dev = Modernizr.touch;
+
+
+$(function(){
+	var isSafari = (/Safari/.test(navigator.userAgent));
+	var isChrome = (/Chrome/.test(navigator.userAgent));
+	var isOpera = (/Opera/.test(navigator.userAgent));
+	informb_stat_user_id=getCookie_n("informb_stat_user_id");
+
+	if ((isSafari && !isChrome)|| isOpera) {
+		$("body").append('<iframe id="informb_stat_sessionframe" name="informb_stat_sessionframe" onload="informb_stat_safari_submit_form()" src="//'+informb_stat_url+'/blank.html" style="display:none;"></iframe><form id="informb_stat_sessionform" enctype="application/x-www-form-urlencoded" action="//'+informb_stat_url+'/blank.html" target="informb_stat_sessionframe" action="post"></form>');
+	} else {
+		informb_stat_start();
+	}
+	//$("body").append('<img src="//'+informb_stat_url+'/stat_img/js_add.gif?url='+encodeURI(window.location.href)+'&r='+Math.random()+'" width="1" height="1" alt="">');
+});
+
+function informb_stat_safari_submit_form() {
+	if (informb_stat_safari_submited == 0) {
+		informb_stat_safari_submited = 1;
+		$("#informb_stat_sessionform").submit();
+		setTimeout(function(){informb_stat_start();},5000);
+	}else if (informb_stat_safari_submited == 1) {
+		informb_stat_safari_submited = 2;
+		informb_stat_start();
+	}
+}
+
+function informb_stat_start() {
+	if(informb_stat_started){
+		return false;
+	}
+	informb_stat_started = true;
+	if(document.referrer.length>3){
+		if(informb_stat_passed_by_filter(document.referrer, informb_stat_filter)){
+			//tсли урлы одинаковые то это не локальный переход а перезагрузка
+			if(window.location.href!=document.referrer) {
+				//проверим локальный ли это переход
+				var a = document.createElement('a');
+				a.href = document.referrer;
+				if (window.location.host == a.hostname) {
+					var ajax_data={};
+					ajax_data["c_r"]=document.referrer;
+					informb_stat_action("local_transfer", ajax_data)
+				}
+			}
+		}
+	}
+
+	if(informb_stat_passed_by_filter(window.location.href, informb_stat_filter)) {
+		$("[id*='ib_s_e_']").each(function (indx, element) {
+			if ($(element).attr("id").length > 0) {
+				informb_stat_scroll_el[informb_stat_scroll_el.length] = {div_id: $(element).attr("id"), target_div:$(element), viewed: false};
+			}
+		});
+		var ajax_data={};
+		ajax_data["c_r"]=document.referrer;
+		ajax_data["el_l"]=informb_stat_el_list;
+		ajax_data["experiment_id"]=informb_stat_experiment_id;
+		informb_stat_action("start", ajax_data)
+	}
+}
+
+function informb_stat_passed_by_filter(url, filter) {
+	var passed=true;
+	if(filter && filter.length>0){
+		passed=false;
+		var ref_param=parseUrlQuery(url);
+		for(var i in filter) {
+			if (!filter.hasOwnProperty(i)) continue;
+			if(ref_param.hasOwnProperty(filter[i].param) && ref_param[filter[i].param]==filter[i].val){
+				passed=true;
+				break;
+			}else if(ref_param.hasOwnProperty(filter[i].param) && filter[i].val==""){
+				passed=true;
+				break;
+			}
+		}
+	}
+	return passed;
+}
+
+function informb_stat_action(action, ajax_data) {
+	if(informb_stat_safari_submited>0){
+		ajax_data["presubmited"]=true;
+	}
+	ajax_data["a"]=action;
+	ajax_data["i_t_d"]=informb_stat_is_touch_dev;
+	ajax_data["c_u"]=window.location.href;
+	ajax_data["s_u_id"]=informb_stat_user_id;
+	//ajax_data["s_s_id"]=informb_stat_session_id;
+	ajax_data["s_v_p_id"]=informb_stat_view_page_id;
+
+	$.ajax({url: "//"+informb_stat_url+"/add_action.php", dataType: "jsonp", data:ajax_data , crossDomain: true, cache: false, jsonp:true, jsonpcallbackString: "informb_stat_action_loaded"});
+}
+
+function informb_stat_action_loaded(resp) {
+	if(resp.a=="start") {
+		informb_stat_user_id = resp.s_u_id;
+		//informb_stat_session_id = resp.s_s_id;
+		informb_stat_view_page_id = resp.s_v_p_id;
+		//setCookie_n("informb_stat_session_id", informb_stat_session_id, {path: "/"}); //(НЕ РАБОТАЕТ) запишем на период сессии броузера
+		setCookie_n("informb_stat_user_id", informb_stat_user_id, {path: "/", expires: 365 * 24 * 60 * 60});  //запишем на год
+		informb_stat_onscroll();
+		$(window).scroll(informb_stat_onscroll);
+		$(window).mousemove(informb_stat_onmousemove);
+
+		informb_stat_timer_cur=informb_stat_timers.shift();
+		if(informb_stat_timer_cur>0){
+			setTimeout(informb_stat_ontimer, informb_stat_timer_cur*1000);
+		}
+	}else if(resp.action=="error"){
+
+	}else{
+
+	}
+}
+
+function informb_stat_ontimer(){
+	informb_stat_timer_go+=informb_stat_timer_cur;
+	informb_stat_action("timer", {t:informb_stat_timer_go, u_m_m_o:informb_stat_user_mouse_moved_once, u_m_m_o_t:informb_stat_user_mouse_moved_on_time, u_s_o: informb_stat_user_scrolled_once,  u_s_o_t: informb_stat_user_scrolled_on_time});
+
+	if(informb_stat_user_mouse_moved_on_time){
+		informb_stat_user_mouse_moved_on_time=false;
+	}
+	if(informb_stat_user_scrolled_on_time){
+		informb_stat_user_scrolled_on_time=false;
+	}
+
+	var next_time=informb_stat_timers.shift();
+	if(next_time>0){
+		informb_stat_timer_cur=next_time-informb_stat_timer_go;
+		setTimeout(informb_stat_ontimer, informb_stat_timer_cur*1000);
+	}
+
+}
+
+function informb_stat_onmousemove(){
+	if(!informb_stat_user_mouse_moved_once){
+		informb_stat_user_mouse_moved_once=true;
+	}
+	if(!informb_stat_user_mouse_moved_on_time){
+		informb_stat_user_mouse_moved_on_time=true;
+	}
+}
+function informb_stat_onscroll(){
+	if(!informb_stat_scroll_pre && !informb_stat_user_scrolled_once){
+		informb_stat_user_scrolled_once=true;
+		informb_stat_action("user_scrolled_once", {})
+	}
+	if(!informb_stat_scroll_pre && !informb_stat_user_scrolled_on_time){
+		informb_stat_user_scrolled_on_time=true;
+	}
+	informb_stat_scroll_pre=false;
+	var el_x,el_x_plus_w,el_y,el_y_plus_w;
+	for(var i=0; i<informb_stat_scroll_el.length; i++) {
+		if(!informb_stat_scroll_el[i].viewed){
+			el_x=informb_stat_scroll_el[i].target_div.offset().left;
+			el_x_plus_w=informb_stat_scroll_el[i].target_div.offset().left+(informb_stat_scroll_el[i].target_div.width()*0.9);
+			el_y=informb_stat_scroll_el[i].target_div.offset().top;
+			el_y_plus_w=informb_stat_scroll_el[i].target_div.offset().top+(informb_stat_scroll_el[i].target_div.height()*0.9);
+			if(	(el_x>=$(window).scrollLeft())
+				&&(el_x_plus_w<=($(window).scrollLeft()+$(window).width()))
+				&&(el_y>=$(window).scrollTop())
+				&&(el_y_plus_w<=($(window).scrollTop()+$(window).height()))){
+
+				informb_stat_scroll_el[i].viewed=true;
+				informb_stat_action("user_view_el", {v_e:informb_stat_scroll_el[i].div_id, u_s_o: informb_stat_user_scrolled_once, u_m_m_o: informb_stat_user_mouse_moved_once});
+			}
+		}
+	}
+}

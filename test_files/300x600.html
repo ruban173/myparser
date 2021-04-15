@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<!-- saved from url=(0074)https://s0.2mdn.net/9824983/1617984048910/300x600_GoogleDV360/300x600.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <title>Title</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+<meta name="ad.size" content="width=300,height=600">
+<script type="text/javascript">
+var clickTag = "http://www.google.com"; </script>
+    <style>
+        .per-show{
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url(300x600.jpg);
+        }
+        .banner-wrapper.show .per-show{
+            display: none;
+        }
+        .banner-wrapper:not(.show) .show-after{
+            opacity: 0;
+        }
+        body{
+            min-width: 100vw;
+            min-height: 100vh;
+            position: relative;
+            margin: 0;
+        }
+        .banner-wrapper{
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: url(bkg.jpg) center right no-repeat;
+            background-size: cover;
+            transition: all .1s;
+            overflow: hidden;
+            max-width: 300px;
+            max-height: 600px;
+            margin: auto;
+         }
+        .banner-wrapper.show{
+            opacity: 1;
+        }
+        .banner-wrapper.show .kinder-img, .banner-wrapper.show .text1, .banner-wrapper.show .text2{
+            opacity: 1;
+            transform: translate(0) rotate(0deg);
+
+        }
+        .bag-wrapper{
+            position: absolute;
+            bottom: 5px;
+            right: -14vh;
+        }
+        .kinder-img, .text1, .text2{
+            position: absolute;
+            opacity: 0;
+            transition: all 2s;
+        }
+        .kinder-img{
+            bottom: 30.3%;
+            right: 57%;
+            z-index: 2;
+            height: 27%;
+        }
+        .text1{
+            transform: translate(150%) rotate(100deg);
+            z-index: 3;
+            height: 37%;
+            top: -2%;
+            left: -16%;
+            position: absolute;
+        }
+        .text2{
+            transform: translate(150%) rotate(-100deg);
+            height: 30%;
+            bottom: 7%;
+            right: 27%;
+            z-index: 3;
+        }
+        .bag{
+            height: 100%;
+        }
+
+        .bag-wrapper.landscape{
+            height: 90%;
+        }
+        .bag-wrapper.landscape .bag{
+            height: 100%;
+        }
+
+        .bag-wrapper.portrait{
+            width: 100%;
+        }
+        .bag-wrapper.portrait .bag{
+            width: 100%;
+        }
+    </style>
+<script type="text/javascript">
+    
+  (function() {
+    var MAX_URL_PARAM_LENGTH = 34;
+    var CLICK_X_URL_KEY = 'nx';
+    var CLICK_Y_URL_KEY = 'ny';
+    var CREATIVE_DIMENSIONS_KEY = 'dim';
+    var AD_URL_PARAM = '&adurl=';
+
+    var relegateNavigation = '';
+    var urlParamMap = {};
+
+    urlParamMap[CLICK_X_URL_KEY] = null;
+    urlParamMap[CLICK_Y_URL_KEY] = null;
+    urlParamMap[CREATIVE_DIMENSIONS_KEY] = null;
+
+    var handleClickTagMessage = function(e) {
+      try {
+        var eventData = JSON.parse(e.data);
+      } catch (err) {
+        return;
+      }
+      if (eventData.isInitClickTag) {
+        if (eventData.clickTags) {
+          for (var i = 0; i < eventData.clickTags.length; i++) {
+            var clkTag = eventData.clickTags[i];
+            window[clkTag.name] = clkTag.url;
+          }
+        } else if (eventData.clickTag) {
+          window.clickTag = eventData.clickTag;
+        }
+        relegateNavigation = eventData.relegateNavigation;
+      }
+    };
+
+    var storeClickCoordinates = function(e) {
+      urlParamMap[CLICK_X_URL_KEY] = Math.round(e.clientX);
+      urlParamMap[CLICK_Y_URL_KEY] = Math.round(e.clientY);
+    };
+
+    var getCreativeDimensions = function() {
+      return window.innerWidth + 'x' + window.innerHeight;
+    }
+
+    var getExitClickParams = function(e) {
+      urlParamMap[CREATIVE_DIMENSIONS_KEY] = getCreativeDimensions();
+
+      var exitParams = '';
+      for (var key in urlParamMap) {
+        exitParams += '&' + key + '=';
+        if (urlParamMap[key] !== null) {
+          exitParams += urlParamMap[key];
+        }
+      }
+      return exitParams;
+    }
+
+    var appendExitClickParams = function(url) {
+      var adUrlIndex = url.toLowerCase().indexOf(AD_URL_PARAM);
+      var paramsToBeAdded = getExitClickParams();
+      if (adUrlIndex > -1 && paramsToBeAdded.length <= MAX_URL_PARAM_LENGTH) {
+        url = url.substr(0, adUrlIndex) + paramsToBeAdded +
+          url.substr(adUrlIndex);
+      };
+      return url;
+    };
+
+    if (open.call) {
+      window.open = function(open) {
+        return function(url, name, features) {
+          url = appendExitClickParams(url);
+          if (relegateNavigation === 'parent') {
+            var message = {'clickTag': url, 'isPostClickTag': true};
+            parent.postMessage(JSON.stringify(message), '*');
+          } else {
+            var args = [url, name];
+            if (features) {
+              args.push(features);
+            }
+            open.apply(window, args);
+          }
+        };
+      }(window.open);
+    }
+
+    if (window.addEventListener) {
+      window.addEventListener(
+          'message', handleClickTagMessage, false);
+      window.addEventListener('mousedown', storeClickCoordinates, true);
+    } else {
+      window.attachEvent('onmessage', handleClickTagMessage);
+    }
+  })();
+    
+  </script></head>
+<body>
+    <a href="javascript:window.open(window.clickTag)">
+        <div class="banner-wrapper show">
+            <div class="per-show">
+
+            </div>
+            <div class="show-after">
+                <div class="bag-wrapper portrait">
+                    <img src="./bag.png" class="bag" alt="kinder">
+                    <img src="./kinder.png" class="kinder-img" alt="kinder">
+                    <img src="./text1.png" class="text1" alt="text">
+                    <img src="./text2.png" class="text2" alt="text">
+                </div>
+            </div>
+        </div>
+</a>
+<script>
+    function addSize(){
+        if(window.innerWidth / window.innerHeight > 0.84){
+            document.querySelector('.bag-wrapper').classList.remove('portrait');
+            document.querySelector('.bag-wrapper').classList.add('landscape');
+        }else{
+            document.querySelector('.bag-wrapper').classList.remove('landscape');
+            document.querySelector('.bag-wrapper').classList.add('portrait');
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+
+        addSize();
+
+        document.querySelector('.banner-wrapper').classList.add('show');
+
+        window.addEventListener("resize", function () {
+            addSize()
+        });
+    });
+</script>
+
+
+</body></html>
